@@ -1,0 +1,29 @@
+# example values
+
+indexing-settings:
+  sites:
+    - url: https://www.lenta.ru
+      name: Лента.ру
+    - url: https://www.skillbox.ru
+      name: Skillbox
+    - url: https://www.playback.ru
+      name: PlayBack.Ru
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/indexing
+    username: root
+    password: mysql
+
+  jpa:
+    properties:
+      hibernate:
+        show_sql: true
+    open-in-view: true
+    hibernate:
+      ddl-auto: update
+
+  mvc:
+    hidden-method:
+      filter:
+        enabled: true
