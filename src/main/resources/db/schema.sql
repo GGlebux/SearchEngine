@@ -1,7 +1,7 @@
 CREATE TABLE site
 (
     id          INT PRIMARY KEY AUTO_INCREMENT         NOT NULL,
-    status      ENUM ('INDEXING', 'INDEXED', 'FAILED') NOT NULL,
+    status ENUM ('INDEXING', 'INDEXED', 'FAILED') NOT NULL,
     status_time DATETIME                               NOT NULL,
     last_error  TEXT,
     url         VARCHAR(255)                           NOT NULL,
@@ -18,7 +18,8 @@ CREATE TABLE page
     FOREIGN KEY (site_id) REFERENCES site (id) ON DELETE CASCADE
 );
 
-CREATE INDEX page_path ON page (path(255));
+CREATE INDEX page_path ON page (path(512));
+ALTER TABLE page ADD CONSTRAINT uk_page_site_path UNIQUE (site_id, path(512));
 
 CREATE TABLE lemma
 (

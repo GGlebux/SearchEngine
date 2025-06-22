@@ -3,6 +3,7 @@ package searchengine.models;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 
@@ -15,6 +16,7 @@ import static org.hibernate.annotations.OnDeleteAction.CASCADE;
 @Setter
 @Entity
 @Table(name = "page")
+@NoArgsConstructor
 public class Page {
     @Id
     @Column(name = "id", nullable = false)
@@ -33,6 +35,13 @@ public class Page {
     private Integer code;
 
     @Lob
-    @Column(name = "content", nullable = false)
+    @Column(name = "content", nullable = false,  columnDefinition = "MEDIUMTEXT")
     private String content;
+
+    public Page(Site site, String path, Integer code, String content) {
+        this.site = site;
+        this.path = path;
+        this.code = code;
+        this.content = content;
+    }
 }

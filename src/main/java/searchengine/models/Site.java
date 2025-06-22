@@ -4,11 +4,11 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
-import java.util.List;
+import java.util.Set;
 
 import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.GenerationType.IDENTITY;
-import static java.util.List.of;
+import static java.util.Set.of;
 
 @Getter
 @Setter
@@ -41,9 +41,8 @@ public class Site {
     private String name;
 
     @OneToMany(mappedBy = "site")
-    private List<Page> pages = of();
+    private Set<Page> pages = of();
 
     @OneToMany(mappedBy = "site")
-    private List<Lemma> lemmas = of();
-
+    private Set<Lemma> lemmas = of();
 }

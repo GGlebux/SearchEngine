@@ -1,5 +1,5 @@
 package searchengine.services;
 
 public interface IndexingService {
-    void startIndexing(String url);
+    void startIndexing();
 }

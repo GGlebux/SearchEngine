@@ -1,5 +1,5 @@
 package searchengine.dto.responses;
 
 public class SuccessResponse {
-    private final static boolean result = true;
+    private final static Boolean result = true;
 }

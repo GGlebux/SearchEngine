@@ -1,10 +1,12 @@
 package searchengine.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import searchengine.dto.requests.UrlRequest;
 import searchengine.dto.responses.SuccessResponse;
 import searchengine.dto.statistics.StatisticsResponse;
+import searchengine.services.IndexingService;
 import searchengine.services.StatisticsService;
 
 import java.util.Optional;
@@ -16,9 +18,12 @@ import static org.springframework.http.ResponseEntity.ok;
 public class ApiController {
 
     private final StatisticsService statisticsService;
+    private final IndexingService indexingService;
 
-    public ApiController(StatisticsService statisticsService) {
+    @Autowired
+    public ApiController(StatisticsService statisticsService, IndexingService indexingService) {
         this.statisticsService = statisticsService;
+        this.indexingService = indexingService;
     }
 
     /**
@@ -40,6 +45,7 @@ public class ApiController {
      */
     @GetMapping("/startIndexing")
     public ResponseEntity<SuccessResponse> startIndexing() {
+        indexingService.startIndexing();
         return ok(new SuccessResponse());
     }
 
@@ -50,8 +56,8 @@ public class ApiController {
      * @return {@code ResponseEntity<SuccessResponse>}
      */
     @GetMapping("/stopIndexing")
-    public ResponseEntity<SuccessResponse> stopIndexing() {
-        return ok(new SuccessResponse());
+    public ResponseEntity<?> stopIndexing() {
+        return ok("Погнали");
     }
 
     /**
