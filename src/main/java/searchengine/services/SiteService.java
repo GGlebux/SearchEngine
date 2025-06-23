@@ -5,14 +5,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import searchengine.config.SiteUrl;
 import searchengine.config.SitesList;
-import searchengine.models.Status;
 import searchengine.models.Site;
+import searchengine.models.Status;
 import searchengine.repositories.SiteRepository;
 
 import java.util.List;
 import java.util.Optional;
 
 import static java.time.Instant.now;
+import static java.util.Set.of;
 import static org.apache.logging.log4j.util.Strings.EMPTY;
 import static searchengine.models.Status.INDEXING;
 
@@ -21,11 +22,13 @@ import static searchengine.models.Status.INDEXING;
 public class SiteService {
     private final SiteRepository repo;
     private final SitesList targetSites;
+    private final VisitedLinksService visitedLinksService;
 
     @Autowired
-    public SiteService(SiteRepository repo, SitesList targetSites) {
+    public SiteService(SiteRepository repo, SitesList targetSites, VisitedLinksService visitedLinksService) {
         this.repo = repo;
         this.targetSites = targetSites;
+        this.visitedLinksService = visitedLinksService;
     }
 
     @Transactional
@@ -48,11 +51,14 @@ public class SiteService {
 
     @Transactional
     public List<Site> getPreparedConfigSites() {
-        this.deleteAllByUrlIn(targetSites
+        List<String> sitesToDelete = targetSites
                 .getSiteUrls()
                 .stream()
                 .map(SiteUrl::getUrl)
-                .toList());
+                .toList();
+
+        visitedLinksService.clearVisited(sitesToDelete);
+        this.deleteAllByUrlIn(sitesToDelete);
 
         List<Site> sitesToSave =
                 targetSites
@@ -65,6 +71,8 @@ public class SiteService {
                                 .status(INDEXING)
                                 .statusTime(now())
                                 .lastError(EMPTY)
+                                .lemmas(of())
+                                .pages(of())
                                 .build())
                         .toList();
 

@@ -1,7 +1,6 @@
 package searchengine.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import searchengine.models.Page;
@@ -26,8 +25,7 @@ public class PageService {
 
     @Transactional
     public synchronized void save(Page page) {
-        try {repo.save(page);}
-        catch (DataIntegrityViolationException _) {}
+       repo.save(page);
     }
 
     @Transactional
