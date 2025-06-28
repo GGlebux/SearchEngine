@@ -1,7 +1,7 @@
 package searchengine.parsing;
 
 import lombok.AllArgsConstructor;
-import org.jsoup.Connection;
+import org.jsoup.Connection.Response;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -9,9 +9,12 @@ import searchengine.exceptions.ParsingException;
 import searchengine.services.VisitedLinksService;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.Set;
 
-import static java.lang.System.err;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toSet;
 
 @AllArgsConstructor
@@ -19,36 +22,51 @@ public class Parser {
     private final VisitedLinksService visitedLinks;
     private final String domainUrl;
     private final static String AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36";
-    private final static String REFERER = "https://www.google.com/";
-
-    private final static String NOT_FOUND = "Страница не найдена (неправильная ссылка или страница удалена)";
 
     public PageData parseUrl(String pagePath) throws ParsingException {
         String address = domainUrl + pagePath;
 
-        Connection.Response response;
+        Response response;
         Document doc;
         try {
             response = Jsoup.connect(address)
                     .userAgent(AGENT)
-                    .referrer(REFERER)
                     .timeout(10000)
+                    .ignoreContentType(true)
+                    .ignoreContentType(true)
                     .execute();
+
+            int statusCode = response.statusCode();
+            if (statusCode >= 400) {
+                String errorMessage = getHttpErrorMessage(statusCode);
+                throw new ParsingException(errorMessage, statusCode);
+            }
+
             doc = response.parse();
+            if (isNull(doc)) {
+                throw new ParsingException("Не удалось распознать содержание страницы", 0);
+            }
 
-            Set<String> links = extractLinks(doc, pagePath);
-
+            Set<String> links = extractLinks(doc);
             return new PageData(pagePath, response.statusCode(), doc.body().text(), links);
 
+        } catch (MalformedURLException e) {
+            throw new ParsingException("Некорректный URL адрес: " + address, 0);
+        } catch (SocketTimeoutException e) {
+            throw new ParsingException("Превышено время ожидания ответа от сервера", 0);
+        } catch (UnknownHostException e) {
+            throw new ParsingException("Не удалось найти указанный сайт: " + e.getMessage(), 0);
         } catch (HttpStatusException e) {
-            throw new ParsingException(NOT_FOUND, e.getStatusCode());
+            String errorMessage = getHttpErrorMessage(e.getStatusCode());
+            throw new ParsingException(errorMessage, e.getStatusCode());
         } catch (IOException e) {
-            err.printf("Parsing error: '%s' in page '%s' by '%s'\n", e.getMessage(), address, e.getCause());
-            throw new RuntimeException();
+            throw new ParsingException("Ошибка при загрузке страницы: " + e.getMessage(), 0);
+        } catch (Exception e) {
+            throw new ParsingException("Неожиданная ошибка при обработке страницы", 0);
         }
     }
 
-    private Set<String> extractLinks(Document doc, String pagePath) {
+    private Set<String> extractLinks(Document doc) {
         return doc
                 .select("a[href]")
                 .stream()
@@ -63,5 +81,21 @@ public class Parser {
                         || !l.contains(".")
                         || l.matches(".+/[^.?]+(\\?.*)?$"))               // исключаем ссылки на ресурсы
                 .collect(toSet());
+    }
+
+    private String getHttpErrorMessage(int statusCode) {
+        return switch (statusCode) {
+            case 400 -> "Неверный запрос к серверу";
+            case 401 -> "Требуется авторизация";
+            case 403 -> "Доступ запрещен";
+            case 404 -> "Страница не найдена";
+            case 408 -> "Время ожидания запроса истекло";
+            case 429 -> "Слишком много запросов";
+            case 500 -> "Ошибка сервера";
+            case 502 -> "Плохой шлюз";
+            case 503 -> "Сервис недоступен";
+            case 504 -> "Время ожидания шлюза истекло";
+            default -> "Ошибка HTTP: " + statusCode;
+        };
     }
 }

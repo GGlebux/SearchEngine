@@ -5,11 +5,9 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.OnDelete;
 
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
-import static org.hibernate.annotations.OnDeleteAction.CASCADE;
 
 @Data
 @Getter
@@ -24,7 +22,6 @@ public class Page {
     private Integer id;
 
     @ManyToOne(fetch = LAZY, optional = false)
-    @OnDelete(action = CASCADE)
     @JoinColumn(name = "site_id", nullable = false)
     private Site site;
 
@@ -43,5 +40,13 @@ public class Page {
         this.path = path;
         this.code = code;
         this.content = content;
+    }
+
+    @Override
+    public String toString() {
+        return "Page{" +
+                "path='" + path + '\'' +
+                ", code=" + code +
+                '}';
     }
 }

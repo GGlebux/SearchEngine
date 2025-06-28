@@ -7,75 +7,108 @@ import searchengine.config.SiteUrl;
 import searchengine.config.SitesList;
 import searchengine.models.Site;
 import searchengine.models.Status;
+import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static java.time.Instant.now;
-import static java.util.Set.of;
-import static org.apache.logging.log4j.util.Strings.EMPTY;
+import static java.util.stream.Collectors.toSet;
 import static searchengine.models.Status.INDEXING;
 
 @Service
 @Transactional(readOnly = true)
 public class SiteService {
-    private final SiteRepository repo;
+    private final SiteRepository siteRepo;
+    private final PageRepository pageRepo;
     private final SitesList targetSites;
     private final VisitedLinksService visitedLinksService;
+    private final Lock updateLock = new ReentrantLock();
 
     @Autowired
-    public SiteService(SiteRepository repo, SitesList targetSites, VisitedLinksService visitedLinksService) {
-        this.repo = repo;
+    public SiteService(SiteRepository siteRepo, PageRepository pageRepo, SitesList targetSites, VisitedLinksService visitedLinksService) {
+        this.siteRepo = siteRepo;
+        this.pageRepo = pageRepo;
         this.targetSites = targetSites;
         this.visitedLinksService = visitedLinksService;
     }
 
     @Transactional
-    public synchronized void updateSiteStatus(Site site, Status status, Optional<String> error) {
-        site.setStatus(status);
-        site.setStatusTime(now());
-        error.ifPresent(site::setLastError);
-        repo.save(site);
-    }
-
-    @Transactional
-    public void deleteAllByUrlIn(List<String> urls) {
-        repo.deleteAllByUrlIn(urls);
-    }
-
-    @Transactional
-    public List<Site> saveAll(List<Site> sites) {
-        return repo.saveAll(sites);
+    public void updateSiteStatus(Site site, Status status, Optional<String> error, EnumSet<Status> statusesToUpdate) {
+        updateLock.lock();
+        try {
+            siteRepo.updateSelectedStates(site.getId(), status, error.orElse(""), now(), statusesToUpdate);
+        } finally {
+            updateLock.unlock();
+        }
     }
 
     @Transactional
     public List<Site> getPreparedConfigSites() {
-        List<String> sitesToDelete = targetSites
-                .getSiteUrls()
+        List<Site> preparedSites = new ArrayList<>();
+
+        Set<String> targetUrls = this.getTargetUrls();
+
+        Set<Site> sitesFromBD = siteRepo.findAllByUrlIn(targetUrls);
+        Set<String> urlsFromBD = sitesFromBD
                 .stream()
-                .map(SiteUrl::getUrl)
-                .toList();
+                .map(Site::getUrl)
+                .collect(toSet());
 
-        visitedLinksService.clearVisited(sitesToDelete);
-        this.deleteAllByUrlIn(sitesToDelete);
+        // Очищаем РЕДИС
+        visitedLinksService.clearVisited(targetUrls);
 
-        List<Site> sitesToSave =
+        // Создаем несуществующие
+        List<Site> newSites = createConfigSites(
                 targetSites
                         .getSiteUrls()
                         .stream()
-                        .map(siteUrl -> Site
-                                .builder()
-                                .url(siteUrl.getUrl())
-                                .name(siteUrl.getName())
-                                .status(INDEXING)
-                                .statusTime(now())
-                                .lastError(EMPTY)
-                                .lemmas(of())
-                                .pages(of())
-                                .build())
-                        .toList();
+                        .filter(su -> !urlsFromBD.contains(su.getUrl()))
+                        .collect(toSet()));
+        // Обновляем существующие
+        List<Site> oldSites = prepareConfigSites(sitesFromBD
+                .stream()
+                .filter(s -> urlsFromBD.contains(s.getUrl()))
+                .collect(toSet()));
 
-        return this.saveAll(sitesToSave);
+        preparedSites.addAll(newSites);
+        preparedSites.addAll(oldSites);
+
+        return preparedSites;
+    }
+
+    @Transactional
+    public List<Site> createConfigSites(Collection<SiteUrl> targetUrls) {
+        return siteRepo.saveAll(targetUrls
+                .stream()
+                .map(info -> new Site(info.getName(), info.getUrl(), INDEXING, ""))
+                .toList());
+    }
+
+    @Transactional
+    public List<Site> prepareConfigSites(Collection<Site> existedSites) {
+        pageRepo.deleteAllBySiteIn(existedSites);
+        return siteRepo.saveAll(existedSites
+                .stream()
+                .peek(s -> s.setStatus(INDEXING))
+                .peek(s -> s.setLastError(""))
+                .peek(s -> s.setStatusTime(now()))
+                .toList());
+    }
+
+    @Transactional
+    public Set<Site> findTargetSites() {
+        return siteRepo.findAllByUrlIn(getTargetUrls());
+    }
+
+
+    private Set<String> getTargetUrls() {
+        return targetSites
+                .getSiteUrls()
+                .stream()
+                .map(SiteUrl::getUrl)
+                .collect(toSet());
     }
 }

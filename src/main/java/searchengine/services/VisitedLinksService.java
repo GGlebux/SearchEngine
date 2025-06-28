@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.Collection;
 
 import static java.util.Objects.requireNonNull;
 
@@ -21,7 +21,7 @@ public class VisitedLinksService {
         redis.opsForSet().add(domain, path);
     }
 
-    public void clearVisited(List<String> domains) {
+    public void clearVisited(Collection<String> domains) {
         redis.unlink(domains);
     }
 

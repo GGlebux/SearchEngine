@@ -43,7 +43,7 @@ public class ApiController {
      * запущена, метод возвращает соответствующее сообщение об ошибке.
      * @return {@code ResponseEntity<SuccessResponse>}
      */
-    @GetMapping("/startIndexing")
+    @GetMapping( "/startIndexing")
     public ResponseEntity<SuccessResponse> startIndexing() {
         indexingService.startIndexing();
         return ok(new SuccessResponse());
@@ -57,7 +57,8 @@ public class ApiController {
      */
     @GetMapping("/stopIndexing")
     public ResponseEntity<?> stopIndexing() {
-        return ok("Погнали");
+        indexingService.stopIndexing();
+        return ok(new SuccessResponse());
     }
 
     /**

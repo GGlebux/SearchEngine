@@ -1,5 +1,8 @@
 package searchengine.dto.responses;
 
+import lombok.Data;
+
+@Data
 public class SuccessResponse {
-    private final static Boolean result = true;
+    private final Boolean result = true;
 }
