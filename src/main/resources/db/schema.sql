@@ -1,10 +1,10 @@
 CREATE TABLE site
 (
     id          INT PRIMARY KEY AUTO_INCREMENT         NOT NULL,
-    status ENUM ('INDEXING', 'INDEXED', 'FAILED') NOT NULL,
+    status      ENUM ('INDEXING', 'INDEXED', 'FAILED') NOT NULL,
     status_time DATETIME                               NOT NULL,
     last_error  TEXT,
-    url         VARCHAR(255)                           NOT NULL,
+    url         VARCHAR(255) UNIQUE                    NOT NULL,
     name        VARCHAR(255)                           NOT NULL
 );
 
@@ -19,7 +19,8 @@ CREATE TABLE page
 );
 
 CREATE INDEX page_path ON page (path(512));
-ALTER TABLE page ADD CONSTRAINT uk_page_site_path UNIQUE (site_id, path(512));
+ALTER TABLE page
+    ADD CONSTRAINT uk_page_site_path UNIQUE (site_id, path(512));
 
 CREATE TABLE lemma
 (

@@ -15,6 +15,7 @@ import static java.util.List.of;
 @ToString
 @Component
 @ConfigurationProperties(prefix = "indexing-settings")
-public class SitesList {
+public class Config {
     private List<SiteUrl> siteUrls = of();
+    private Integer parsingDelay;
 }

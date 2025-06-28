@@ -3,7 +3,7 @@ package searchengine.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import searchengine.config.SiteUrl;
-import searchengine.config.SitesList;
+import searchengine.config.Config;
 import searchengine.dto.statistics.DetailedStatisticsItem;
 import searchengine.dto.statistics.StatisticsData;
 import searchengine.dto.statistics.StatisticsResponse;
@@ -18,7 +18,7 @@ import java.util.Random;
 public class StatisticsServiceImpl implements StatisticsService {
 
     private final Random random = new Random();
-    private final SitesList sites;
+    private final Config sites;
 
     @Override
     public StatisticsResponse getStatistics() {

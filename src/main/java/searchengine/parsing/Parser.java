@@ -3,7 +3,6 @@ package searchengine.parsing;
 import lombok.AllArgsConstructor;
 import org.jsoup.Connection.Response;
 import org.jsoup.HttpStatusException;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import searchengine.exceptions.ParsingException;
 import searchengine.services.VisitedLinksService;
@@ -12,16 +11,67 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
+import static java.util.List.of;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toSet;
+import static org.jsoup.Jsoup.connect;
 
 @AllArgsConstructor
 public class Parser {
     private final VisitedLinksService visitedLinks;
     private final String domainUrl;
-    private final static String AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36";
+    private final static List<String> AGENTS;
+    private final static Map<String, String> HEADERS;
+    private final static Random RANDOM = new Random();
+    private final static List<String> REFEREES;
+
+    static {
+        AGENTS = of("Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36)");
+        HEADERS = Map.of(
+                "Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                "Accept-Language", "en-US,en;q=0.5",
+                "Referer", "https://www.google.com/"
+        );
+
+        REFEREES = List.of(
+                "https://www.google.com/",            // Google (основной)
+                "https://www.google.com/search?q=example",     // Google Search
+                "https://yandex.ru/",                          // Яндекс
+                "https://yandex.ru/search/?text=example",      // Яндекс Поиск
+                "https://www.bing.com/",                       // Bing
+                "https://duckduckgo.com/",                     // DuckDuckGo
+                "https://www.reddit.com/",                     // Reddit (часто в рефералах)
+                "https://twitter.com/",                        // Twitter
+                "https://www.facebook.com/",                   // Facebook
+                "https://t.me/",                               // Telegram
+                "https://news.ycombinator.com/",               // Hacker News
+                "https://medium.com/",                         // Medium
+                "https://github.com/",                         // GitHub
+                ""                                             // Пустой (прямой заход)
+        );
+    }
 
     public PageData parseUrl(String pagePath) throws ParsingException {
         String address = domainUrl + pagePath;
@@ -29,40 +79,39 @@ public class Parser {
         Response response;
         Document doc;
         try {
-            response = Jsoup.connect(address)
-                    .userAgent(AGENT)
-                    .timeout(10000)
-                    .ignoreContentType(true)
-                    .ignoreContentType(true)
+            response = connect(address)
+                    .userAgent(getRandomElemFrom(AGENTS))
+                    .referrer(getRandomElemFrom(REFEREES))
+                    .headers(HEADERS)
                     .execute();
 
             int statusCode = response.statusCode();
             if (statusCode >= 400) {
                 String errorMessage = getHttpErrorMessage(statusCode);
-                throw new ParsingException(errorMessage, statusCode);
+                throw new ParsingException(errorMessage, pagePath, statusCode);
             }
 
             doc = response.parse();
             if (isNull(doc)) {
-                throw new ParsingException("Не удалось распознать содержание страницы", 0);
+                throw new ParsingException("Не удалось распознать содержание страницы", pagePath, 0);
             }
 
             Set<String> links = extractLinks(doc);
             return new PageData(pagePath, response.statusCode(), doc.body().text(), links);
 
         } catch (MalformedURLException e) {
-            throw new ParsingException("Некорректный URL адрес: " + address, 0);
+            throw new ParsingException("Некорректный URL адрес: " + address, pagePath, 404);
         } catch (SocketTimeoutException e) {
-            throw new ParsingException("Превышено время ожидания ответа от сервера", 0);
+            throw new ParsingException("Превышено время ожидания ответа от сервера", pagePath, 0);
         } catch (UnknownHostException e) {
-            throw new ParsingException("Не удалось найти указанный сайт: " + e.getMessage(), 0);
+            throw new ParsingException("Не удалось найти указанный сайт: " + e.getMessage(), pagePath, 404);
         } catch (HttpStatusException e) {
             String errorMessage = getHttpErrorMessage(e.getStatusCode());
-            throw new ParsingException(errorMessage, e.getStatusCode());
+            throw new ParsingException(errorMessage, pagePath, e.getStatusCode());
         } catch (IOException e) {
-            throw new ParsingException("Ошибка при загрузке страницы: " + e.getMessage(), 0);
+            throw new ParsingException("Ошибка при загрузке страницы: " + e.getMessage(), pagePath, 0);
         } catch (Exception e) {
-            throw new ParsingException("Неожиданная ошибка при обработке страницы", 0);
+            throw new ParsingException("Неожиданная ошибка при обработке страницы: " + e.getMessage(), pagePath, 0);
         }
     }
 
@@ -97,5 +146,12 @@ public class Parser {
             case 504 -> "Время ожидания шлюза истекло";
             default -> "Ошибка HTTP: " + statusCode;
         };
+    }
+
+    private String getRandomElemFrom(List<String> elems) {
+        return elems
+                .stream()
+                .skip(RANDOM.nextInt(elems.size()))
+                .findFirst().get();
     }
 }

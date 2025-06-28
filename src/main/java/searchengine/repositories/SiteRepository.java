@@ -18,7 +18,8 @@ public interface SiteRepository extends JpaRepository<Site, Integer> {
     Set<Site> findAllByUrlIn(Collection<String> urls);
 
     @Modifying
-    @Query("UPDATE Site s SET s.status = :status, s.lastError = :error, s.statusTime = :time " +
+    @Query("UPDATE Site s SET s.status = :status, " +
+            "s.lastError = CASE WHEN :error IS NOT NULL THEN :error ELSE s.lastError END, s.statusTime = :time " +
             "WHERE s.id = :id AND s.status IN :statusesToUpdate")
     void updateSelectedStates(@Param("id") Integer id,
                               @Param("status") Status status,

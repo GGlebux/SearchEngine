@@ -14,6 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 
 import static java.lang.System.out;
+import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.concurrent.CompletableFuture.allOf;
 import static java.util.concurrent.CompletableFuture.runAsync;
@@ -28,7 +29,7 @@ public class IndexingServiceImpl implements IndexingService {
     private final List<CompletableFuture<Void>> futures;
     private final ObjectProvider<ForkJoinPool> provider;
     private volatile ForkJoinPool forkJoinPool;
-    private static final String ROOT_PATH;
+    public static final String ROOT_PATH;
 
     static {
         ROOT_PATH = "/";
@@ -84,16 +85,11 @@ public class IndexingServiceImpl implements IndexingService {
 
 
     private void indexingSite(Site site) {
-//        try  {
         Parser parser = new Parser(visitedLinksService, site.getUrl());
         ParsingTask parsingTask =
                 new ParsingTask(site, ROOT_PATH, parser, pageService, siteService, visitedLinksService);
         forkJoinPool.invoke(parsingTask);
         out.printf("Parsed site with url: '%s'\n", site.getUrl());
-        siteService.updateSiteStatus(site, INDEXED, of(""), EnumSet.of(INDEXING));
-
-//        } catch (Exception e) {
-//            siteService.updateSiteStatus(site, FAILED, of(e.getMessage()));
-//        }
+        siteService.updateSiteStatus(site, INDEXED, empty(), EnumSet.of(INDEXING));
     }
 }

@@ -40,7 +40,7 @@ public class Application {
         return new ForkJoinPool(getRuntime().availableProcessors(),
                 factory,
                 HANDLER,
-                false);
+                true);
     }
 
 }

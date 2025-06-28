@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import searchengine.config.SiteUrl;
-import searchengine.config.SitesList;
+import searchengine.config.Config;
 import searchengine.models.Site;
 import searchengine.models.Status;
 import searchengine.repositories.PageRepository;
@@ -23,27 +23,27 @@ import static searchengine.models.Status.INDEXING;
 public class SiteService {
     private final SiteRepository siteRepo;
     private final PageRepository pageRepo;
-    private final SitesList targetSites;
+    private final Config targetSites;
     private final VisitedLinksService visitedLinksService;
     private final Lock updateLock = new ReentrantLock();
 
     @Autowired
-    public SiteService(SiteRepository siteRepo, PageRepository pageRepo, SitesList targetSites, VisitedLinksService visitedLinksService) {
+    public SiteService(SiteRepository siteRepo, PageRepository pageRepo, Config targetSites, VisitedLinksService visitedLinksService) {
         this.siteRepo = siteRepo;
         this.pageRepo = pageRepo;
         this.targetSites = targetSites;
         this.visitedLinksService = visitedLinksService;
     }
 
-    @Transactional
-    public void updateSiteStatus(Site site, Status status, Optional<String> error, EnumSet<Status> statusesToUpdate) {
-        updateLock.lock();
-        try {
-            siteRepo.updateSelectedStates(site.getId(), status, error.orElse(""), now(), statusesToUpdate);
-        } finally {
-            updateLock.unlock();
+        @Transactional
+        public void updateSiteStatus(Site site, Status status, Optional<String> error, EnumSet<Status> statusesToUpdate) {
+            updateLock.lock();
+            try {
+                siteRepo.updateSelectedStates(site.getId(), status, error.orElse(null), now(), statusesToUpdate);
+            } finally {
+                updateLock.unlock();
+            }
         }
-    }
 
     @Transactional
     public List<Site> getPreparedConfigSites() {
