@@ -19,6 +19,20 @@
         <java.version>23</java.version>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>local-maven-repo</id>
+            <url>/home/gglebux/.m2/repository</url>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>local-maven-repo</id>
+            <url>/home/gglebux/.m2/repository</url>
+        </pluginRepository>
+    </pluginRepositories>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -43,7 +57,7 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.33 </version>
+            <version>8.0.33</version>
         </dependency>
 
         <dependency>
@@ -61,6 +75,46 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.lucene.morphology</groupId>
+            <artifactId>morph</artifactId>
+            <version>1.5</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/jar_libs/morph-1.5.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.lucene.analysis</groupId>
+            <artifactId>morphology</artifactId>
+            <version>1.5</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/jar_libs/morphology-1.5.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.lucene.morphology</groupId>
+            <artifactId>dictionary-reader</artifactId>
+            <version>1.5</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/jar_libs/dictionary-reader-1.5.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.lucene.morphology</groupId>
+            <artifactId>english</artifactId>
+            <version>1.5</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/jar_libs/english-1.5.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.lucene.morphology</groupId>
+            <artifactId>russian</artifactId>
+            <version>1.5</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/jar_libs/russian-1.5.jar</systemPath>
         </dependency>
     </dependencies>
 
@@ -82,6 +136,9 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <includeSystemScope>true</includeSystemScope>
+                </configuration>
             </plugin>
         </plugins>
     </build>
