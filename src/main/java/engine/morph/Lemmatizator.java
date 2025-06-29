@@ -1,16 +1,21 @@
 package engine.morph;
 
-import org.apache.lucene.morphology.LuceneMorphology;
-import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
+import java.io.Console;
+import java.util.*;
 
-import java.util.List;
+import static java.lang.System.out;
 
 public class Lemmatizator {
     public static void main(String[] args) throws Exception {
-        LuceneMorphology luceneMorph =
-                new RussianLuceneMorphology();
-        List<String> wordBaseForms =
-                luceneMorph.getNormalForms("леса");
-        wordBaseForms.forEach(System.out::println);
+        Console console = System.console();
+        char[] password = console.readPassword("Enter password: ");
+        out.println(new String(password));
+
+//        LuceneMorphology russian = new RussianLuceneMorphology();
+//        russian.getMorphInfo("замок").forEach(out::println);
+//        boolean isRealWord = russian.checkString("ываыва");
+//        out.println(isRealWord);
+
+
     }
 }

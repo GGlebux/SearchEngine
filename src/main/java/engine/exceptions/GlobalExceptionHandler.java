@@ -1,4 +1,4 @@
-package engine.controllers;
+package engine.exceptions;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
