@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 
 import static jakarta.persistence.FetchType.LAZY;
@@ -31,9 +30,9 @@ public class Lemma {
     private String lemma;
 
     @Column(name = "frequency", nullable = false)
-    private Integer frequency;
+    private Long frequency;
 
-    public Lemma(Site site, String lemma, Integer frequency) {
+    public Lemma(Site site, String lemma, Long frequency) {
         this.site = site;
         this.lemma = lemma;
         this.frequency = frequency;

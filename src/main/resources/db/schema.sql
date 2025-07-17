@@ -29,7 +29,7 @@ CREATE TABLE lemma
     id        SERIAL PRIMARY KEY NOT NULL,
     site_id   INT                NOT NULL,
     lemma     VARCHAR(255)       NOT NULL,
-    frequency INT                NOT NULL,
+    frequency BIGINT             NOT NULL,
     FOREIGN KEY (site_id) REFERENCES site (id) ON DELETE CASCADE
 );
 

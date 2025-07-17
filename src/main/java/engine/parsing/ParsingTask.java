@@ -51,12 +51,14 @@ public class ParsingTask extends RecursiveAction {
             PageData data = parser.parseUrl(domain.getUrl(), root);
             pageService.save(new Page(domain, data.getPath(), data.getCode(), data.getContent()));
 
-            Map<String, Integer> lemmas = lemmatizator.collectLemmas(data.getContent());
+            Map<String, Long> lemmas = lemmatizator.collectLemmas(data.getContent());
 
-            for (Map.Entry<String, Integer> entry : lemmas.entrySet()) {
-                lemmasService.save(new Lemma(domain, entry.getKey(), entry.getValue()));
-            }
-            lemmas.forEach((key, value) -> new Lemma(domain, key, value));
+            lemmasService.saveAll(lemmas
+                    .entrySet()
+                    .stream()
+                    .map(entry -> new Lemma(domain, entry.getKey(), entry.getValue()))
+                    .collect(toSet()));
+
 
             siteService.updateSiteStatus(domain, INDEXING, empty(), update_statuses);
 

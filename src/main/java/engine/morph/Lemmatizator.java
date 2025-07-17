@@ -1,12 +1,9 @@
 package engine.morph;
 
-import engine.parsing.TestWriter;
 import org.apache.lucene.morphology.LuceneMorphology;
 
-import java.io.IOException;
 import java.util.*;
 
-import static java.lang.String.join;
 import static java.util.Arrays.stream;
 import static java.util.Locale.ROOT;
 import static java.util.Set.of;
@@ -24,12 +21,9 @@ public class Lemmatizator {
         this.morph = morph;
     }
 
-    public Map<String, Integer> collectLemmas(String text) {
-        Map<String, Integer> lemmas = new HashMap<>();
+    public Map<String, Long> collectLemmas(String text) {
+        Map<String, Long> lemmas = new HashMap<>();
         String[] words = splitRussianWords(text);
-
-        List<String> form = new ArrayList<>();
-
 
         for (String word : words) {
             if (word.isBlank()) continue;
@@ -40,37 +34,12 @@ public class Lemmatizator {
             List<String> normalForms = morph.getNormalForms(word);
             if (normalForms.isEmpty()) continue;
 
-            if (normalForms
-                    .stream()
-                    .anyMatch(base -> base.equals("ть"))) {
-                System.out.println("Гадское слово: " + word + "___" + normalForms+ "___" + wordBaseForms);
-            }
-
             String norm = normalForms.getFirst();
-
-            form.add(norm);
-
             if (lemmas.containsKey(norm)) {
                 lemmas.put(norm, lemmas.get(norm) + 1);
             } else {
-                lemmas.put(norm, 1);
+                lemmas.put(norm, 1L);
             }
-        }
-
-        TestWriter body_writer;
-        TestWriter split_writer;
-        TestWriter format_writer;
-        try {
-            body_writer = new TestWriter("body.txt");
-            body_writer.write(join("\n", text.split(WHITESPACE)));
-
-            split_writer = new TestWriter("split.txt");
-            split_writer.write(join("\n", words));
-
-            format_writer = new TestWriter("format.txt");
-            format_writer.write(join("\n", form));
-        } catch (IOException e) {
-            e.printStackTrace();
         }
         return lemmas;
 

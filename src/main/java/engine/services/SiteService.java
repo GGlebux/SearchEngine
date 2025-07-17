@@ -13,8 +13,6 @@ import engine.repositories.PageRepository;
 import engine.repositories.SiteRepository;
 
 import java.util.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static java.time.Instant.now;
 import static java.util.stream.Collectors.toSet;
@@ -28,14 +26,15 @@ public class SiteService {
     private final PageRepository pageRepo;
     private final Config targetSites;
     private final VisitedLinksService visitedLinksService;
-    private final Lock updateLock = new ReentrantLock();
+    private final LemmaService lemmaService;
 
     @Autowired
-    public SiteService(SiteRepository siteRepo, PageRepository pageRepo, Config targetSites, VisitedLinksService visitedLinksService) {
+    public SiteService(SiteRepository siteRepo, PageRepository pageRepo, Config targetSites, VisitedLinksService visitedLinksService, LemmaService lemmaService) {
         this.siteRepo = siteRepo;
         this.pageRepo = pageRepo;
         this.targetSites = targetSites;
         this.visitedLinksService = visitedLinksService;
+        this.lemmaService = lemmaService;
     }
 
     @Transactional
@@ -54,6 +53,9 @@ public class SiteService {
                 .stream()
                 .map(Site::getUrl)
                 .collect(toSet());
+
+        // Удаляем все связные леммы
+        lemmaService.deleteAllBySite(sitesFromBD);
 
         // Очищаем РЕДИС
         visitedLinksService.clearVisited(targetUrls);
