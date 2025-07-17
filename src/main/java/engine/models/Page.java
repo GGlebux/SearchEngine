@@ -31,8 +31,7 @@ public class Page {
     @Column(name = "code", nullable = false)
     private Integer code;
 
-    @Lob
-    @Column(name = "content", nullable = false,  columnDefinition = "MEDIUMTEXT")
+    @Column(name = "content", columnDefinition = "TEXT",nullable = false)
     private String content;
 
     public Page(Site site, String path, Integer code, String content) {
@@ -47,6 +46,7 @@ public class Page {
         return "Page{" +
                 "path='" + path + '\'' +
                 ", code=" + code +
+                ", content='" + content + '\'' +
                 '}';
     }
 }

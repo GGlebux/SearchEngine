@@ -17,7 +17,10 @@ public class PageService {
     }
 
     @Transactional
-    public synchronized void save(Page page) {
-       repo.save(page);
+    public void save(Page page) {
+        repo.insertOnConflict(page.getSite().getId(),
+                page.getPath(),
+                page.getCode(),
+                page.getContent());
     }
 }

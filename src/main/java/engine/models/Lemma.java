@@ -3,6 +3,7 @@ package engine.models;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 
@@ -12,7 +13,7 @@ import static org.hibernate.annotations.OnDeleteAction.NO_ACTION;
 
 @Data
 @Getter
-@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "lemma")
 public class Lemma {
@@ -31,4 +32,10 @@ public class Lemma {
 
     @Column(name = "frequency", nullable = false)
     private Integer frequency;
+
+    public Lemma(Site site, String lemma, Integer frequency) {
+        this.site = site;
+        this.lemma = lemma;
+        this.frequency = frequency;
+    }
 }

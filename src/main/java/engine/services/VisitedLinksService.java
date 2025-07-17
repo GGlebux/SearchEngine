@@ -28,5 +28,4 @@ public class VisitedLinksService {
     public boolean contains(String domain, String path) {
         return requireNonNull(redis.opsForSet().isMember(domain, path));
     }
-
 }

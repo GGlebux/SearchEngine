@@ -1,24 +1,17 @@
 package engine.parsing;
 
-import lombok.AllArgsConstructor;
 import org.jsoup.Connection.Response;
 import org.jsoup.HttpStatusException;
 import org.jsoup.nodes.Document;
 import engine.exceptions.ParsingException;
 import engine.services.VisitedLinksService;
-import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -26,24 +19,18 @@ import java.util.Set;
 
 import static java.util.List.of;
 import static java.util.Objects.isNull;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toSet;
 import static org.jsoup.Jsoup.connect;
 
-@AllArgsConstructor
+@Component
 public class Parser {
     private final VisitedLinksService visitedLinks;
-    private final String domainUrl;
     private final static List<String> AGENTS;
     private final static Map<String, String> HEADERS;
     private final static Random RANDOM = new Random();
     private final static List<String> REFEREES;
-    private final static WebDriver driver;
-    private final static WebDriverWait wait;
 
     static {
-        driver = new ChromeDriver();
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         AGENTS = of("Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
                 "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
@@ -86,7 +73,12 @@ public class Parser {
         );
     }
 
-    public PageData parseUrl(String pagePath) throws ParsingException {
+    @Autowired
+    public Parser(VisitedLinksService visitedLinks) {
+        this.visitedLinks = visitedLinks;
+    }
+
+    public PageData parseUrl(String domainUrl, String pagePath) throws ParsingException {
         String address = domainUrl + pagePath;
 
         Response response;
@@ -104,34 +96,13 @@ public class Parser {
                 throw new ParsingException(errorMessage, pagePath, statusCode);
             }
 
-            driver.get(address);
-            WebElement openPopupButton = wait.until(ExpectedConditions.elementToBeClickable(
-                    By.cssSelector(".open-popup-btn")
-            ));
-            openPopupButton.click();
-
-            WebElement popup = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                    By.cssSelector(".modal-content")
-            ));
-
-            ((JavascriptExecutor) driver).executeScript("window.scrollTo(0, 500)");
-            WebElement dynamicContent = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                    By.cssSelector(".lazy-loaded-text")
-            ));
-
-            String pageText = driver.findElement(By.tagName("body")).getText();
-            pageText += popup.getText();
-            pageText += dynamicContent.getText();
-//            driver.quit();
-
             doc = response.parse();
             if (isNull(doc)) {
                 throw new ParsingException("Не удалось распознать содержание страницы", pagePath, 0);
             }
 
-            Set<String> links = extractLinks(doc);
-            System.out.println(doc.html());
-            return new PageData(pagePath, response.statusCode(), pageText, links);
+            Set<String> links = extractLinks(domainUrl, doc);
+            return new PageData(pagePath, response.statusCode(), doc.body().text(), links);
 
         } catch (MalformedURLException e) {
             throw new ParsingException("Некорректный URL адрес: " + address, pagePath, 404);
@@ -149,7 +120,7 @@ public class Parser {
         }
     }
 
-    private Set<String> extractLinks(Document doc) {
+    private Set<String> extractLinks(String domainUrl, Document doc) {
         return doc
                 .select("a[href]")
                 .stream()

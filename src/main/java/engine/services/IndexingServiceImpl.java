@@ -1,10 +1,10 @@
 package engine.services;
 
+import engine.parsing.ParsingTaskFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import engine.models.Site;
-import engine.parsing.Parser;
 import engine.parsing.ParsingTask;
 
 import java.util.ArrayList;
@@ -24,23 +24,16 @@ import static engine.models.Status.*;
 @Service
 public class IndexingServiceImpl implements IndexingService {
     private final SiteService siteService;
-    private final PageService pageService;
-    private final VisitedLinksService visitedLinksService;
+    private final ParsingTaskFactory taskFactory;
     private final List<CompletableFuture<Void>> futures;
     private final ObjectProvider<ForkJoinPool> provider;
     private volatile ForkJoinPool forkJoinPool;
-    public static final String ROOT_PATH;
-
-    static {
-        ROOT_PATH = "/";
-    }
 
     @Autowired
-    public IndexingServiceImpl(SiteService siteService, PageService pageService, VisitedLinksService visitedLinksService,
+    public IndexingServiceImpl(SiteService siteService, ParsingTaskFactory taskFactory,
                                ObjectProvider<ForkJoinPool> provider) {
         this.siteService = siteService;
-        this.pageService = pageService;
-        this.visitedLinksService = visitedLinksService;
+        this.taskFactory = taskFactory;
         this.provider = provider;
         this.forkJoinPool = provider.getObject();
         this.futures = new ArrayList<>();
@@ -85,11 +78,8 @@ public class IndexingServiceImpl implements IndexingService {
 
 
     private void indexingSite(Site site) {
-        Parser parser = new Parser(visitedLinksService, site.getUrl());
-        ParsingTask parsingTask =
-                new ParsingTask(site, ROOT_PATH, parser, pageService, siteService, visitedLinksService);
+        ParsingTask parsingTask = taskFactory.createParsingTask(site, "/");
         forkJoinPool.invoke(parsingTask);
-        out.printf("Parsed site with url: '%s'\n", site.getUrl());
         siteService.updateSiteStatus(site, INDEXED, empty(), EnumSet.of(INDEXING));
     }
 }

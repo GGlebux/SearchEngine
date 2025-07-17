@@ -3,6 +3,8 @@ package engine.models;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -16,7 +18,7 @@ import static java.util.Set.of;
 import static org.hibernate.annotations.CascadeType.ALL;
 
 @Getter
-@Setter
+
 @Entity
 @Table(name = "site")
 @AllArgsConstructor
@@ -28,14 +30,16 @@ public class Site {
     @GeneratedValue(strategy = IDENTITY)
     private Integer id;
 
+    @Setter
     @Enumerated(STRING)
     @Column(name = "status", nullable = false)
     private Status status;
 
+    @Setter
     @Column(name = "status_time", nullable = false)
     private Instant statusTime;
 
-    @Lob
+    @Setter
     @Column(name = "last_error")
     private String lastError;
 

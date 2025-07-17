@@ -1,10 +1,13 @@
 package engine;
 
+import engine.morph.Lemmatizator;
+import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 
+import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
@@ -24,7 +27,6 @@ public class Application {
     }
 
     public static void main(String[] args) {
-        Thread.setDefaultUncaughtExceptionHandler(HANDLER);
         run(Application.class, args);
     }
 
@@ -41,6 +43,11 @@ public class Application {
                 factory,
                 HANDLER,
                 true);
+    }
+
+    @Bean
+    public Lemmatizator lemmatizator() throws IOException {
+        return new Lemmatizator(new RussianLuceneMorphology());
     }
 
 }

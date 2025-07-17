@@ -1,5 +1,7 @@
 package engine.services;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,7 @@ import static engine.models.Status.INDEXING;
 @Service
 @Transactional(readOnly = true)
 public class SiteService {
+    private static final Logger log = LoggerFactory.getLogger(SiteService.class);
     private final SiteRepository siteRepo;
     private final PageRepository pageRepo;
     private final Config targetSites;
@@ -35,15 +38,10 @@ public class SiteService {
         this.visitedLinksService = visitedLinksService;
     }
 
-        @Transactional
-        public void updateSiteStatus(Site site, Status status, Optional<String> error, EnumSet<Status> statusesToUpdate) {
-            updateLock.lock();
-            try {
-                siteRepo.updateSelectedStates(site.getId(), status, error.orElse(null), now(), statusesToUpdate);
-            } finally {
-                updateLock.unlock();
-            }
-        }
+    @Transactional
+    public void updateSiteStatus(Site site, Status status, Optional<String> error, EnumSet<Status> statusesToUpdate) {
+        siteRepo.updateSelectedStates(site.getId(), status, error.orElse(null), now(), statusesToUpdate);
+    }
 
     @Transactional
     public List<Site> getPreparedConfigSites() {
