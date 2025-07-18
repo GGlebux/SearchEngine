@@ -17,7 +17,7 @@ public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
     INSERT INTO lemma (site_id, lemma, frequency)
     SELECT * FROM UNNEST(?1::bigint[], ?2::text[], ?3::bigint[])
     ON CONFLICT ON CONSTRAINT uk_lemma_site
-    DO UPDATE SET frequency = lemma.frequency + EXCLUDED.frequency RETURNING *""",
+    DO UPDATE SET frequency = lemma.frequency + EXCLUDED.frequency""",
             nativeQuery = true)
     void bulkUpsertLemmas(
             @Param("siteIds") Integer[] siteIds,
